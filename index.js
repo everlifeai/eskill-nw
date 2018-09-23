@@ -86,7 +86,7 @@ function acceptInviteCode(req, inviteCode) {
     client.send({ type: "accept-invite", invite:inviteCode }, (err) => {
         if(err) {
             u.showErr(err)
-            sendReply('Failed to join pub..', req)
+            sendReply('Failed to join pub...', req)
         } else {
             sendReply(`Invite has been accepted! I'm on pub's network now`, req)
         }
