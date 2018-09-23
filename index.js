@@ -14,7 +14,7 @@ function main() {
 }
 
 const commMgrClient = new cote.Requester({
-    name: 'Elife-Invite -> CommMgr',
+    name: 'Elife-NW -> CommMgr',
     key: 'everlife-communication-svc',
 })
 
@@ -29,7 +29,7 @@ function sendReply(msg, req) {
 let msKey = 'everlife-invite-demo-svc'
 /*      outcome/
  * Register ourselves as a message handler with the communication
- * manager so we can handle requests for Everlife-Invite.
+ * manager so we can handle requests for Everlife-NW.
  */
 function registerWithCommMgr() {
     commMgrClient.send({
@@ -44,107 +44,60 @@ function registerWithCommMgr() {
 function startMicroservice() {
 
     /*      understand/
-     * The calculator microservice (partitioned by key to prevent
+     * The microservice (partitioned by key to prevent
      * conflicting with other services.
      */
-    const calcSvc = new cote.Responder({
-        name: 'Everlife-Invite Service Demo',
+    const svc = new cote.Responder({
+        name: 'Everlife-NW Service',
         key: msKey,
     })
-    
-    calcSvc.on('msg', (req, cb) => {
-        console.log("everlife invite")
-        if(!req.msg) return cb()
-        else{
-            handleInvite(req,cb)
-        }
-    })
 
-    function handleInvite(req,cb){
+    svc.on('msg', (req, cb) => {
+        if(!req.msg) return cb()
 
         const msg = req.msg.trim().toLowerCase()
-        console.log(msg)
-        if(msg.match(/^create an invite for/i)){
-            console.log("generate invite link")
-            getInviteCode(req,cb)
-        }else if(msg.match(/^use this invite *(.*)/i)){
+        if(msg.match(/^create an invite for/i)) {
+            // TODO: Get number of invites from user
+            // TODO: Move matching code to elife-utils
+            cb(null, true)
+            getInviteCode(req)
+        } else if(msg.match(/^use this invite *(.*)/i)) {
+            cb(null, true)
             const rx = /^use this invite *(.*)/i
             let m = msg.match(rx)
-            if(!m) {
-                cb(null,true)
-                sendReply('Failed to join pub...',req)
-            }else{
-                cb(null,true)
-                acceptInviteCode(req,m[1],cb)
-            }
-            
-        }else if(true){
-            console.log("Test 2")
+            if(!m) sendReply('Failed to find invite to use...',req)
+            else acceptInviteCode(req, m[1])
+        } else {
+            // TODO: Skill matching is delicate - if response doesn't
+            // happen the message gets 'swallowed'
+            cb()
         }
-
-    }
-    const client = new cote.Requester({
-        name: 'ssb client',
-        key: 'everlife-ssb-svc',
     })
 
-    function acceptInviteCode(req,inviteCode,cb){
+}
 
-        client.send({ type: "accept-invite",invite:inviteCode }, (err) => {
-            if(err){
-                cb(null,true)
-                sendReply('Failed to join pub..')
-            }
-            else {
-        
-                console.log('posted message');
-                client.send({
-                    type: 'dump-msgs',
-                    opts: {
-                        showPvt: true,
-                        showCnt: true,
-                        showAth: false,
-                    },
-                }, (err, msgs) => {
-                    if(err) console.error(err)
-                    else console.log(msgs)
-                })
-                cb(null, true)
-                sendReply(`Invite has been accepted! I'm on pub's network now`,req)
+const client = new cote.Requester({
+    name: 'NW -> SSB',
+    key: 'everlife-ssb-svc',
+})
 
-            }
-        })
-    }
+function acceptInviteCode(req, inviteCode) {
+    sendReply('Accepting invite ' + inviteCode, req)
+    client.send({ type: "accept-invite", invite:inviteCode }, (err) => {
+        if(err) {
+            u.showErr(err)
+            sendReply('Failed to join pub..', req)
+        } else {
+            sendReply(`Invite has been accepted! I'm on pub's network now`, req)
+        }
+    })
+}
 
-    function getInviteCode(req,cb){
-       
-        client.send({ type: "create-invite" }, (err,invite) => {
-            if(err) {
-                cb(null,true)
-                sendReply('Faild to create invite')
-            }
-            else {
-                
-                console.log('posted message');
-
-                client.send({
-                    type: 'dump-msgs',
-                    opts: {
-                        showPvt: true,
-                        showCnt: true,
-                        showAth: false,
-                    },
-                }, (err, msgs) => {
-                    if(err) console.error(err)
-                    else console.log(msgs)
-                })
-                cb(null, true)
-                sendReply(`Here is your invite ${invite}`,req)
-
-            }
-        })
-    }
-
+function getInviteCode(req) {
+    client.send({ type: "create-invite" }, (err, invite) => {
+        if(err) sendReply('Faild to create invite')
+        else sendReply(`Here is your invite ${invite}`,req)
+    })
 }
 
 main()
