@@ -55,7 +55,7 @@ function startMicroservice() {
     svc.on('msg', (req, cb) => {
         if(!req.msg) return cb()
 
-        const msg = req.msg.trim().toLowerCase()
+        const msg = req.msg.trim()
         if(msg.match(/^create an invite for/i)) {
             // TODO: Get number of invites from user
             // TODO: Move matching code to elife-utils
