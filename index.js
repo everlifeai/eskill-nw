@@ -82,7 +82,7 @@ const client = new cote.Requester({
 })
 
 function acceptInviteCode(req, inviteCode) {
-    sendReply('Trying to contact node with your invite...', req)
+    sendReply('Trying to contact pub with your invite...', req)
     client.send({ type: "accept-invite", invite:inviteCode }, (err) => {
         if(err) {
             u.showErr(err)
