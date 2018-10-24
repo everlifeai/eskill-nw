@@ -36,6 +36,10 @@ function registerWithCommMgr() {
         type: 'register-msg-handler',
         mskey: msKey,
         mstype: 'msg',
+        mshelp: [
+            { cmd: '/create_invite', txt: 'create a new invite to this node as a hub' },
+            { cmd: '/use_invite', txt: 'use an invite to join a hub' },
+        ],
     }, (err) => {
         if(err) u.showErr(err)
     })
@@ -56,17 +60,16 @@ function startMicroservice() {
         if(!req.msg) return cb()
 
         const msg = req.msg.trim()
-        if(msg.match(/^create an invite for/i)) {
+        if(msg == '/create_invite') {
             // TODO: Get number of invites from user
             // TODO: Move matching code to elife-utils
             cb(null, true)
             getInviteCode(req)
-        } else if(msg.match(/^use this invite *(.*)/i)) {
+        } else if(msg.startsWith('/use_invite ')) {
             cb(null, true)
-            const rx = /^use this invite *(.*)/i
-            let m = msg.match(rx)
-            if(!m) sendReply('Failed to find invite to use...',req)
-            else acceptInviteCode(req, m[1])
+            let invite = msg.substr('/use_invite '.length)
+            if(!invite) sendReply('Failed to find invite to use...', req)
+            else acceptInviteCode(req, invite)
         } else {
             // TODO: Skill matching is delicate - if response doesn't
             // happen the message gets 'swallowed'
