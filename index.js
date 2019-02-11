@@ -99,7 +99,12 @@ function acceptInviteCode(req, inviteCode) {
 function getInviteCode(req) {
     client.send({ type: "create-invite" }, (err, invite) => {
         if(err) sendReply('Faild to create invite')
-        else sendReply(`Here is your invite ${invite}`,req)
+        else {
+            if(process.env.SSB_HOST) {
+                invite = process.env.SSB_HOST + invite.substring(invite.indexOf(':'))
+            }
+            sendReply(`Here is your invite: ${invite}`,req)
+        }
     })
 }
 
